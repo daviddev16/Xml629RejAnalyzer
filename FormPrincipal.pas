@@ -16,35 +16,59 @@ uses
   Vcl.Grids,
   Vcl.StdCtrls,
   Xml.XMLDoc,
-  Xml.XMLIntf;
+  Xml.XMLIntf,
+  Data.DB,
+  Vcl.DBGrids,
+  DBClient,
+  Vcl.ExtCtrls,
+  ShellAPI;
 
 type
   TMainForm = class(TForm)
-    GridValores: TStringGrid;
     BtnAnalisar: TButton;
     OpenDialog1: TOpenDialog;
     ChckCorrigirDecimal: TCheckBox;
-    LblTotalizadores: TLabel;
-    Memo1: TMemo;
-    Label1: TLabel;
-    BtnAjuda: TButton;
+    LblTituloGeral: TLabel;
+    BtnInfo: TButton;
+    DBGridValores: TDBGrid;
+    LblTituloInfo: TLabel;
+    LblSumVlReais: TLabel;
+    LblSumVlAtuais: TLabel;
+    LblVlTotalizadorXML: TLabel;
+    BtnResetar: TButton;
+    LLblRej629: TLinkLabel;
+    LLblRej564: TLinkLabel;
+    LblReferencias: TLabel;
+
     procedure FormCreate(Sender: TObject);
     procedure BtnAnalisarClick(Sender: TObject);
-    procedure Label1Click(Sender: TObject);
-    procedure BtnAjudaClick(Sender: TObject);
+    procedure BtnInfoClick(Sender: TObject);
+    procedure BtnResetarClick(Sender: TObject);
+    procedure LinkLabelClickEvent(Sender: TObject; const Link: string;
+      LinkType: TSysLinkType);
 
   private
     { Private declarations }
+
+    GridDataSet : TClientDataSet;
 
     TotalizadorItensReal : Double;
     TotalizadorItensAtual : Double;
     TotalizadorValorTagTotalXml : Double;
     EncontradoDivergente : Boolean;
 
-    procedure InserirLinha(Dados : Array of String);
+    procedure CriarDicaEmLabel(LLabel : TLabel; Dica : String);
+    procedure DBGridDrawColumnCell(Sender: TObject; const Rect: TRect; DataCol:
+      Integer; Column: TColumn; State: TGridDrawState);
+
+    procedure InserirLinha(Dados : Array of TVarRec);
     procedure ProcessarXml(XmlDoc : IXMLDocument);
     procedure ProcessarProdutoDoXml(ProdNodeList : IXMLNodeList);
+    procedure ProcessarTotalizadores();
+    procedure LimparTotalizadores();
+    procedure CriarDataSetSource();
     procedure LimparTudo();
+    procedure CentralizarForm();
 
     function GetChildNode(Nome : String; ParenteNodeList : IXMLNodeList) : IXMLNodeList;
     function CorrigirSeparadorDecimal(ValorStr : String) : Double;
@@ -62,92 +86,105 @@ implementation
 
 {$R *.dfm}
 
+procedure TMainForm.CentralizarForm();
+begin
+  Left :=(Screen.Width-Width)  div 2;
+  Top :=(Screen.Height-Height) div 2;
+end;
+
 { Oncreate TMainForm }
 procedure TMainForm.FormCreate(Sender: TObject);
-var
-  I: Integer;
 begin
 
   { Centralizar tela }
-  Left :=(Screen.Width-Width)  div 2;
-  Top :=(Screen.Height-Height) div 2;
+  LimparTotalizadores;
+  CriarDataSetSource;
+  DBGridValores.DefaultDrawing := False;
+  DBGridValores.OnDrawColumnCell := DBGridDrawColumnCell;
+  GridDataSet.IndexFieldNames := 'Status';
 
-  GridValores.ColCount := 6;
-  GridValores.FixedCols := 0;
-  GridValores.FixedRows := 0;
-
-  GridValores.Cells[0, 0] := 'qCom';
-  GridValores.ColWidths[0] := 50;
-
-  GridValores.Cells[1, 0] := 'vUnCom';
-  GridValores.ColWidths[1] := 70;
-
-  GridValores.Cells[2, 0] := 'vProdAtual';
-  GridValores.ColWidths[2] := 100;
-
-  GridValores.Cells[3, 0] := 'vProdReal';
-  GridValores.ColWidths[3] := 100;
-
-  GridValores.Cells[4, 0] := 'Status';
-  GridValores.ColWidths[4] := 80;
-
-  GridValores.Cells[5, 0] := 'Cd. Produto';
-  GridValores.ColWidths[5] := 110;
-
-  Memo1.Clear;
-
-  with Memo1.Lines do
-  begin
-    Add(String.Empty);
-    Add('  Legenda: ');
-    Add('  qCom: Quantidade do Item no XML;');
-    Add('  vUnCom: Valor total do item no XML;');
-    Add('  vProdAtual: Valor total do item no XML (valor de "<det> -> <vProd>");');
-    Add('  vProdReal: Valor total do item seguindo (qCom * vUnCom);');
-    Add('  Cd.Produto: Código do produto no XML;');
-    Add('  Status: Se o valor total real do item condiz com o valor do XML;');
-    Add('          Verifica: | vProdAtual - vProdReal | <= 0.01');
-    Add('            Se for verdadeiro = Válido');
-    Add('            Se for falso = Divergente');
-    Add(String.Empty);
-    Add('  Totalizador Vl.Real: Somatório dos valores de vProdReal;');
-    Add('  Totalizador Vl.Atual: Somatório dos valores de vProdAtual;');
-    Add('  Totalizador do XML: Valor da tag "<total> -> <ICMSTot> -> <vProd>";');
-    Add(String.Empty);
-  end;
-
-
+  CriarDicaEmLabel(LblSumVlReais, 'Este é o somatório de todos os valores reais dos itens da nota.');
+  CriarDicaEmLabel(LblSumVlAtuais, 'Este é o somatório de todos os valores atuais dos itens no XML.');
+  CriarDicaEmLabel(LblVlTotalizadorXML, 'Este é valor totalizador dos itens da nota no XML.');
 
 end;
 
-
-procedure TMainForm.BtnAjudaClick(Sender: TObject);
+procedure TMainForm.DBGridDrawColumnCell(Sender: TObject;
+  const Rect: TRect; DataCol: Integer; Column: TColumn; State: TGridDrawState);
 var
-  StrAjudaMensagem : TStringBuilder;
+  ValorCell : Variant;
 begin
-  StrAjudaMensagem := TStringBuilder.Create;
 
-  with StrAjudaMensagem do
+  { verificar se o data set está ativo antes }
+  if not DBGridValores.DataSource.DataSet.Active then
+    Exit;
+
+  if (DataCol >= 0) and (DataCol < DBGridValores.Columns.Count) then
   begin
-    Append('A rejeição 564: "Total do Produto / Serviço difere do somatório dos itens", ocorre quando ');
-    Append('O totalizador das tags "<det> -> <vProd>" é diferente de "<total> -> <ICMSTot> -> <vProd>". ');
-    Append('Este sistema pode te ajudar a encontrar se há algum valor que ao somar os valores dos ');
-    Append('itens, fique diferente do totalizador real no XML.');
-  end;
-  ShowMessage(StrAjudaMensagem.ToString);
-  StrAjudaMensagem.Clear;
+    { mudar cor da linha de acordo com o status }
+    ValorCell := GridDataSet.FieldByName(DBGridValores.Columns[5].FieldName).Value;
 
-  with StrAjudaMensagem do
-  begin
-    Append('A rejeição 629: "Valor do Produto difere do produto Valor Unitário de Comercialização e ');
-    Append('Quantidade Comercial", ocorre quando ao multiplicar o valor unitário do XML com a quantidade ');
-    Append('do item no XML para cada produto, encontrasse um valor diferente do valor esperado do total ');
-    Append('do produto. O valor de diferença não pode ultrapassar 0.01 centavos. Caso ultrapasse, o ');
-    Append('programa vai informar na coluna "Status" o valor "Divergente".');
-  end;
-  ShowMessage(StrAjudaMensagem.ToString);
-  StrAjudaMensagem.Free;
+    if ValorCell = 'Divergente' then
+    begin
+      if gdSelected in State then
+      begin
+        DBGridValores.Canvas.Brush.Color := clWebDarkRed;
+        DBGridValores.Canvas.Font.Color := clWebSalmon;
+      end
+      else
+      begin
+        DBGridValores.Canvas.Brush.Color := clWebSalmon;
+        DBGridValores.Canvas.Font.Color := clWebDarkRed;
+      end;
 
+    end
+    else
+    begin
+      if gdSelected in State then
+      begin
+        DBGridValores.Canvas.Brush.Color := clWebGainsboro;
+        DBGridValores.Canvas.Font.Color := clBlack;
+      end
+      else
+      begin
+        DBGridValores.Canvas.Brush.Color := clWhite;
+        DBGridValores.Canvas.Font.Color := clWebGreen;
+      end;
+    end;
+
+  end;
+
+  DBGridValores.DefaultDrawColumnCell(Rect, DataCol, Column, State);
+
+end;
+
+procedure TMainForm.CriarDataSetSource();
+begin
+
+  { inicializando DataSet/DataSource }
+  GridDataSet := TClientDataSet.Create(nil);
+  DBGridValores.DataSource := TDataSource.Create(nil);
+  DBGridValores.DataSource.DataSet := GridDataSet;
+
+  { inicializando colunas do DataSet }
+  GridDataSet.FieldDefs.Add('Cd. Produto', ftString, 17);
+  GridDataSet.FieldDefs.Add('Qtd.', ftString, 12);
+  GridDataSet.FieldDefs.Add('Vl. Unitário', ftString, 12);
+  GridDataSet.FieldDefs.Add('Vl. Item', ftString, 12);
+  GridDataSet.FieldDefs.Add('Vl. Real', ftString, 12);
+  GridDataSet.FieldDefs.Add('Status', ftString, 13);
+  GridDataSet.CreateDataSet;
+end;
+
+
+procedure TMainForm.BtnInfoClick(Sender: TObject);
+begin
+  ShowMessage('Essa opção converte "." em "," caso o sistema esteja configurado para "," como separador decimal.');
+end;
+
+procedure TMainForm.BtnResetarClick(Sender: TObject);
+begin
+  LimparTudo;
 end;
 
 {
@@ -176,12 +213,13 @@ begin
 
   if EncontradoDivergente then
   begin
-    ShowMessage
+    MessageDlg
     (
-      'Foi encontrado algum produto com valor divergente. Tente corrigir no WShop' +
-      ', Caso não seja possível de nenhum jeito pelo o sistema ou o mesmo continue ' +
-      'gerando a tag com valor errado, consulte a supervisão para alterar o XML.'
-    );
+      'Foi encontrado algun(s) produto(s) com valor(es) divergente(s). ' +
+      'Tente corrigir no sistema! Caso não seja possível pelo sistema, ou ' + sLineBreak +
+      'o sistema continua gerando a tag com valor errado, consulte a ' +
+      'supervisão para alterar o XML.',
+    mtWarning, [mbOK], 0);
   end;
 
 end;
@@ -226,9 +264,34 @@ begin
     Append('Totalizador do XML: ' + Monetario(TotalizadorValorTagTotalXml));
   end;
 
-  LblTotalizadores.Caption := StrTotalizador.ToString;
+  ProcessarTotalizadores;
+  GridDataSet.RecNo := 1;
 
 end;
+
+procedure TMainForm.ProcessarTotalizadores();
+begin
+  LblSumVlReais.Caption := 'Somatório dos Valores Reais: ' + Monetario(TotalizadorItensReal);
+  LblSumVlAtuais.Caption := 'Somatório dos Valores do XML: ' + Monetario(TotalizadorItensAtual);
+  LblVlTotalizadorXML.Caption := 'Totalizador do XML: ' + Monetario(TotalizadorValorTagTotalXml);
+  ClientWidth := 860;
+  BtnResetar.Enabled := True;
+  BtnAnalisar.Enabled := False;
+  CentralizarForm;
+end;
+
+procedure TMainForm.LimparTotalizadores();
+begin
+  LblSumVlReais.Caption := '';
+  LblSumVlAtuais.Caption := '';
+  LblVlTotalizadorXML.Caption := '';
+  TotalizadorItensReal := 0;
+  TotalizadorItensAtual := 0;
+  TotalizadorValorTagTotalXml := 0;
+  ClientWidth := 553;
+  CentralizarForm;
+end;
+
 
 { processa as informações dos produtos do XML no TStringGrid }
 procedure TMainForm.ProcessarProdutoDoXml(ProdNodeList : IXMLNodeList);
@@ -261,12 +324,12 @@ begin
   end;
 
   InserirLinha([
+    CProdValor,
     FloatToStr(QComValor),
     Monetario(VUnComValor),
     Monetario(VProdAtualValor),
     Monetario(VProdRealValor),
-    Status,
-    CProdValor
+    Status
   ]);
 
 end;
@@ -285,26 +348,10 @@ begin
   end;
 end;
 
-{Inseri linha nova no TStringGrid }
-procedure TMainForm.InserirLinha(Dados : Array of String);
-var
-  CurrRow : Integer;
-  I : Integer;
+{Inseri linha nova no TBDGrid }
+procedure TMainForm.InserirLinha(Dados : Array of TVarRec);
 begin
-
-  CurrRow := GridValores.RowCount;
-  GridValores.RowCount := CurrRow + 1;
-
-  for I := 0 to GridValores.ColCount - 1 do
-  begin
-    GridValores.Cells[I, CurrRow] := Dados[i];
-  end;
-
-end;
-
-procedure TMainForm.Label1Click(Sender: TObject);
-begin
-
+  GridDataSet.InsertRecord(Dados);
 end;
 
 { corrige o separador de casa decimal caso o sistema utilize ',' para separar }
@@ -318,28 +365,33 @@ begin
   Exit(StrToFloat(ValorStr));
 end;
 
+
 function TMainForm.Monetario(Valor : Double) : String;
 begin
   Result := 'R$ ' + FormatFloat('#,###0.00', Valor);
 end;
 
+
+{ resetar todos os valores do programa }
 procedure TMainForm.LimparTudo();
-var
-  I, J: Integer;
 begin
-  for I := 1 to GridValores.ColCount - 1 do
-  begin
-    for J := 1 to GridValores.RowCount - 1 do
-    begin
-      GridValores.Cells[I, J] := '';
-    end;
-  end;
-  GridValores.RowCount := 1;
-  LblTotalizadores.Caption := 'Aguardando XML para calcular totalizadores...';
-  TotalizadorItensReal := 0;
-  TotalizadorItensAtual := 0;
-  TotalizadorValorTagTotalXml := 0;
+  GridDataSet.EmptyDataSet;
   EncontradoDivergente := False;
+  LimparTotalizadores;
+  BtnResetar.Enabled := False;
+  BtnAnalisar.Enabled := True;
+end;
+
+procedure TMainForm.LinkLabelClickEvent(Sender: TObject; const Link: string;
+  LinkType: TSysLinkType);
+begin
+  ShellExecute(0, 'open', PChar(Link), nil, nil, SW_SHOWNORMAL);
+end;
+
+procedure TMainForm.CriarDicaEmLabel(LLabel : TLabel; Dica : String);
+begin
+  LLabel.ShowHint := True;
+  LLabel.Hint := Dica;
 end;
 
 end.
