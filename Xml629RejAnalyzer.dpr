@@ -12,8 +12,8 @@ uses
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
+  TStyleManager.TrySetStyle('Luna');
   Application.Title := 'Analisador XML NFe Shop';
-  TStyleManager.SetStyle('Luna');
   Application.CreateForm(TMainForm, MainForm);
   //Application.CreateForm(TDBGridTestForm, DBGridTestForm);
   Application.Run;
