@@ -2,7 +2,7 @@ object MainForm: TMainForm
   Left = 0
   Top = 0
   BorderStyle = bsDialog
-  Caption = 'Analisador XML Shop 1.1'
+  Caption = 'Analisador XML Shop 1.2'
   ClientHeight = 438
   ClientWidth = 885
   Color = clBtnFace
