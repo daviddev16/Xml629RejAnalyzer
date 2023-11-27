@@ -153,18 +153,18 @@ object MainForm: TMainForm
     OnLinkClick = LinkLabelClickEvent
   end
   object LinkLabel1: TLinkLabel
-    Left = 576
-    Top = 194
-    Width = 151
-    Height = 21
+    Left = 843
+    Top = 413
+    Width = 34
+    Height = 17
     HelpType = htKeyword
     HelpKeyword = 'RESUMO'
     Caption = 
       '<a href="https://github.com/daviddev16/Xml629RejAnalyzer/blob/ma' +
-      'ster/README.md">Resumo t'#233'cnico / Projeto</a>'
+      'ster/README.md">Sobre</a>'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -13
+    Font.Height = -11
     Font.Name = 'Segoe UI'
     Font.Style = []
     ParentFont = False

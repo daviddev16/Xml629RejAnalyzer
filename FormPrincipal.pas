@@ -53,6 +53,7 @@ type
     TotalizadorItensAtual : Double;
     TotalizadorValorTagTotalXml : Double;
     EncontradoDivergente : Boolean;
+    HabilitarDescricaoColunas : Boolean;
 
     const nmCodigoProduto = 'Cd. Produto';
     const nmVlUnitario = 'Vl. Unitário';
@@ -106,6 +107,9 @@ begin
   CriarDicaEmLabel(LblSumVlReais, 'Este é o somatório de todos os valores reais dos itens da nota.');
   CriarDicaEmLabel(LblSumVlAtuais, 'Este é o somatório de todos os valores atuais dos itens no XML.');
   CriarDicaEmLabel(LblVlTotalizadorXML, 'Este é valor totalizador dos itens da nota no XML.');
+
+  { Em desenvolvimento }
+  HabilitarDescricaoColunas := False;
 
 end;
 
@@ -162,11 +166,15 @@ procedure TMainForm.DBGridValoresTitleClick(Column: TColumn);
 var
   Mensagem : TStringBuilder;
 begin
+
+  if Not HabilitarDescricaoColunas then
+    Exit;
+
   Mensagem := TStringBuilder.Create;
 
-  if Column.FieldName = nmStatus then
+  with Mensagem do
   begin
-    with Mensagem do
+    if Column.FieldName = nmStatus then
     begin
       Append('Divergente: Quando a diferença entre "vUnCom x qCom" e "vProd" é maior que 0.01 centavos;' + sLineBreak);
       Append('Válido: Quando a diferença entre "vUnCom x qCom" e "vProd" é menor ou igual a 0.01;' + sLineBreak);
@@ -174,10 +182,19 @@ begin
       Append('vUnCom: Tag XML com o valor unitário do produto;' + sLineBreak);
       Append('qCom: Tag XML com o Valor da quantidade do item;' + sLineBreak);
       Append('vProd: Tag XML com o do Item;');
-    end;
-  end
-  else
-    Mensagem.Append('Sem comentário nesta coluna.');
+    end
+    else if Column.FieldName = nmCodigoProduto then
+    begin
+      Append('Código do produto no XML;');
+    end
+    else if Column.FieldName = nmQuantidade then
+    begin
+      Append('Quantidade do produto no XML;');
+    end
+
+    else
+      Mensagem.Append('Sem comentário nesta coluna.');
+  end;
 
   MessageDlg(Mensagem.ToString, mtInformation, [mbOk], 0, mbOk);
   Mensagem.Free;
@@ -193,8 +210,8 @@ begin
   begin
     if (Sender as TLinkLabel).HelpKeyword <> 'RESUMO' then
       MessageDlg(
-        'Pode ocorrer do valor no sistema está correto, ' +
-        'mas no XML, estar errado. Neste caso, deve alterar no XML. ' +
+        'Pode ocorrer do valor no sistema estar correto, ' +
+        'e no XML estar errado. Neste caso, deve alterar no XML. ' +
         'Consulte a supervisão para verificar a correção.',
       mtWarning, [TMsgDlgBtn.mbOK], 0);
   end;
