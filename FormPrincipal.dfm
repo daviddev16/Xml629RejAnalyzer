@@ -174,7 +174,7 @@ object MainForm: TMainForm
     Width = 34
     Height = 17
     HelpType = htKeyword
-    HelpKeyword = 'RESUMO'
+    HelpKeyword = 'SOBRE'
     Caption = 
       '<a href="https://github.com/daviddev16/Xml629RejAnalyzer/blob/ma' +
       'ster/README.md">Sobre</a>'

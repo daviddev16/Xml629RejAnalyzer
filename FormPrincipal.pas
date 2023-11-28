@@ -209,7 +209,13 @@ begin
 
   if Sender is TLinkLabel then
   begin
-    if (Sender as TLinkLabel).HelpKeyword <> 'RESUMO' then
+    if (Sender as TLinkLabel).HelpKeyword = 'SOBRE' then
+      MessageDlg(
+        'O projeto é Open source, sinta-se à vontade para sugerir melhoria, ' +
+        'Ou até contribuir para o projeto na aba de Issues =). ',
+      mtInformation, [TMsgDlgBtn.mbOK], 0)
+
+    else if (Sender as TLinkLabel).HelpKeyword <> 'RESUMO' then
       MessageDlg(
         'Pode ocorrer do valor no sistema estar correto, ' +
         'e no XML estar errado. Neste caso, deve alterar no XML. ' +
