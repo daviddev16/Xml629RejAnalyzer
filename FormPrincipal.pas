@@ -37,6 +37,7 @@ type
     LblReferencias: TLabel;
     LinkLabel1: TLinkLabel;
     LblRej564Alerta: TLabel;
+    LblDivergentes: TLabel;
 
     procedure FormCreate(Sender: TObject);
     procedure BtnAnalisarClick(Sender: TObject);
@@ -343,6 +344,7 @@ var
   ValidacaoTotalizadorItensReal : Boolean;
   ValidacaoTotalizadorItensAtual : Boolean;
   ValidacaoTotalizadorValorTagTotalXml : Boolean;
+  DeveMostrarAlertas : Boolean;
 begin
 
   ValidacaoTotalizadorItensReal := True;
@@ -367,8 +369,18 @@ begin
     ValidacaoTotalizadorValorTagTotalXml,
     'Totalizador do XML: ' + Monetario(TotalizadorValorTagTotalXml));
 
-  LblRej564Alerta.Visible := not (ValidacaoTotalizadorItensAtual and
-                                  ValidacaoTotalizadorValorTagTotalXml);
+  PersonalizarTextoValidado(
+    LblDivergentes,
+    False,
+    'Total Divergente: ' + Monetario(Abs(TotalizadorValorTagTotalXml - TotalizadorItensReal)));
+
+
+   DeveMostrarAlertas := not (ValidacaoTotalizadorItensAtual and
+                              ValidacaoTotalizadorValorTagTotalXml);
+
+  LblRej564Alerta.Visible := DeveMostrarAlertas;
+  LblDivergentes.Visible := DeveMostrarAlertas;
+
 
 end;
 

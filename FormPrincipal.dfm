@@ -69,15 +69,15 @@ object MainForm: TMainForm
     StyleElements = [seClient, seBorder]
   end
   object LblReferencias: TLabel
-    Left = 576
-    Top = 131
+    Left = 578
+    Top = 171
     Width = 109
     Height = 15
     Caption = 'Entenda as rejei'#231#245'es:'
   end
   object LblRej564Alerta: TLabel
-    Left = 576
-    Top = 97
+    Left = 578
+    Top = 137
     Width = 299
     Height = 15
     Caption = #9888#65039' Totalizadores divergentes! Rejei'#231#227'o 564 ser'#225' retornada.'
@@ -86,6 +86,22 @@ object MainForm: TMainForm
     Font.Height = -12
     Font.Name = 'Segoe UI'
     Font.Style = []
+    ParentFont = False
+    StyleElements = [seClient, seBorder]
+  end
+  object LblDivergentes: TLabel
+    Left = 576
+    Top = 97
+    Width = 98
+    Height = 17
+    Caption = 'Total Divergente:'
+    Color = clBlue
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clHotLight
+    Font.Height = -13
+    Font.Name = 'Segoe UI'
+    Font.Style = []
+    ParentColor = False
     ParentFont = False
     StyleElements = [seClient, seBorder]
   end
@@ -114,8 +130,8 @@ object MainForm: TMainForm
     OnTitleClick = DBGridValoresTitleClick
   end
   object LLblRej629: TLinkLabel
-    Left = 576
-    Top = 152
+    Left = 578
+    Top = 192
     Width = 243
     Height = 21
     Hint = 'Rej629'
@@ -134,8 +150,8 @@ object MainForm: TMainForm
     OnLinkClick = LinkLabelClickEvent
   end
   object LLblRej564: TLinkLabel
-    Left = 576
-    Top = 173
+    Left = 578
+    Top = 213
     Width = 308
     Height = 21
     Hint = 'Rej564'
