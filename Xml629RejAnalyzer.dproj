@@ -102,9 +102,9 @@
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_MinorVer>1</VerInfo_MinorVer>
-        <VerInfo_Keys>CompanyName=Daviddev16;FileDescription=$(MSBuildProjectName);FileVersion=1.1.0.0;InternalName=;LegalCopyright=DAVID.SUP.SHOP;LegalTrademarks=;OriginalFilename=;ProgramID=Analisador de XML NFe Shop;ProductName=$(MSBuildProjectName);ProductVersion=1.1.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Locale>1046</VerInfo_Locale>
+        <VerInfo_MinorVer>2</VerInfo_MinorVer>
+        <VerInfo_Keys>CompanyName=Daviddev16;FileDescription=$(MSBuildProjectName);FileVersion=1.2.0.0;InternalName=;LegalCopyright=https://github.com/daviddev16;LegalTrademarks=;OriginalFilename=;ProgramID=Analisador de XML NFe Shop;ProductName=$(MSBuildProjectName);ProductVersion=1.2;Comments=</VerInfo_Keys>
         <Icon_MainIcon>Xml629RejAnalyzer_Icon.ico</Icon_MainIcon>
         <UWP_DelphiLogo44>..\..\Desktop\xmlanlyzer.png</UWP_DelphiLogo44>
         <UWP_DelphiLogo150>..\..\Desktop\xmlanlyzer.png</UWP_DelphiLogo150>

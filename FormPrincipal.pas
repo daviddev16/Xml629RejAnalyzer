@@ -239,6 +239,14 @@ begin
   begin
     XmlDoc := TXMLDocument.Create(OpenDialog1.FileName);
     ProcessarXml(XmlDoc);
+
+    if GridDataSet.RecordCount > 0 then
+    begin
+      GridDataSet.RecNo := 1;
+      ProcessarTotalizadores;
+      ExpandirTela(True);
+    end;
+
   end;
 
   if EncontradoDivergente then
@@ -250,11 +258,6 @@ begin
       'supervisão para alterar o XML.',
     mtWarning, [mbOK], 0);
   end;
-
-  GridDataSet.RecNo := 1;
-
-  ProcessarTotalizadores;
-  ExpandirTela(True);
 
 end;
 
